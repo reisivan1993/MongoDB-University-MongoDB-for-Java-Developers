@@ -1,0 +1,158 @@
+HOMEWORK: HOMEWORK 4.1
+
+Suppose you have a collection with the following indexes:
+
+> db.products.getIndexes()
+[
+	{
+		"v" : 1,
+		"key" : {
+			"_id" : 1
+		},
+		"ns" : "store.products",
+		"name" : "_id_"
+	},
+	{
+		"v" : 1,
+		"key" : {
+			"sku" : 1
+		},
+                "unique" : true,
+		"ns" : "store.products",
+		"name" : "sku_1"
+	},
+	{
+		"v" : 1,
+		"key" : {
+			"price" : -1
+		},
+		"ns" : "store.products",
+		"name" : "price_-1"
+	},
+	{
+		"v" : 1,
+		"key" : {
+			"description" : 1
+		},
+		"ns" : "store.products",
+		"name" : "description_1"
+	},
+	{
+		"v" : 1,
+		"key" : {
+			"category" : 1,
+			"brand" : 1
+		},
+		"ns" : "store.products",
+		"name" : "category_1_brand_1"
+	},
+	{
+		"v" : 1,
+		"key" : {
+			"reviews.author" : 1
+		},
+		"ns" : "store.products",
+		"name" : "reviews.author_1"
+	}
+Which of the following queries can utilize at least one index to find all matching documents or to sort? Check all that apply.
+
+
+1. db.products.find( { 'brand' : "GE" } ).sort( { price : 1 } )
+2. db.products.find( { 'brand' : "GE" } )
+3. db.products.find( { $and : [ { price : { $gt : 30 } },{ price : { $lt : 50 } } ] } ).sort( { brand : 1 } )
+4. db.products.find( { brand : 'GE' } ).sort( { category : 1, brand : -1 } )
+
+
+Answer:
+> db.products.find({'brand':"GE"}).explain()
+{
+    "cursor" : "BasicCursor",
+    "isMultiKey" : false,
+    "n" : 0,
+    "nscannedObjects" : 0,
+    "nscanned" : 0,
+    "nscannedObjectsAllPlans" : 0,
+    "nscannedAllPlans" : 0,
+    "scanAndOrder" : false,
+    "indexOnly" : false,
+    "nYields" : 0,
+    "nChunkSkips" : 0,
+    "millis" : 0,
+    "indexBounds" : {
+
+    },
+    "server" : "QUARK-N.local:27017"
+}
+> db.products.find({'brand':"GE"}).sort({price:1}).explain()
+{
+    "cursor" : "BtreeCursor price_-1 reverse",
+    "isMultiKey" : false,
+    "n" : 0,
+    "nscannedObjects" : 2,
+    "nscanned" : 2,
+    "nscannedObjectsAllPlans" : 4,
+    "nscannedAllPlans" : 4,
+    "scanAndOrder" : false,
+    "indexOnly" : false,
+    "nYields" : 0,
+    "nChunkSkips" : 0,
+    "millis" : 0,
+    "indexBounds" : {
+        "price" : [
+            [
+                {
+                    "$minElement" : 1
+                },
+                {
+                    "$maxElement" : 1
+                }
+            ]
+        ]
+    },
+    "server" : "QUARK-N.local:27017"
+}
+> db.products.find({$and:[{price:{$gt:30}},{price:{$lt:50}}]}).sort({brand:1}).explain()
+{
+    "cursor" : "BtreeCursor price_-1",
+    "isMultiKey" : false,
+    "n" : 0,
+    "nscannedObjects" : 0,
+    "nscanned" : 0,
+    "nscannedObjectsAllPlans" : 0,
+    "nscannedAllPlans" : 1,
+    "scanAndOrder" : true,
+    "indexOnly" : false,
+    "nYields" : 0,
+    "nChunkSkips" : 0,
+    "millis" : 0,
+    "indexBounds" : {
+        "price" : [
+            [
+                50,
+                30
+            ]
+        ]
+    },
+    "server" : "QUARK-N.local:27017"
+}
+> db.products.find({brand:'GE'}).sort({category:1, brand:-1}).explain()
+{
+    "cursor" : "BasicCursor",
+    "isMultiKey" : false,
+    "n" : 0,
+    "nscannedObjects" : 2,
+    "nscanned" : 2,
+    "nscannedObjectsAllPlans" : 2,
+    "nscannedAllPlans" : 2,
+    "scanAndOrder" : true,
+    "indexOnly" : false,
+    "nYields" : 0,
+    "nChunkSkips" : 0,
+    "millis" : 0,
+    "indexBounds" : {
+
+    },
+    "server" : "QUARK-N.local:27017"
+}
+1. db.products.find({'brand':"GE"}).sort({price:1})
+3. db.products.find({$and:[{price:{$gt:30}},{price:{$lt:50}}]}).sort({brand:1})  
